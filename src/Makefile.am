@@ -6,6 +6,7 @@ AM_CPPFLAGS = \
 		@ELEMENTARY_CFLAGS@ 		\
 		@MOKOSUITE_CFLAGS@		\
 		@GLIB_CFLAGS@			\
+		@REST_CFLAGS@			\
 		-DDATADIR=\""$(datadir)"\" 	\
 		-DLOCALEDIR=\"$(localedir)\" 	\
 		-Wall
@@ -14,7 +15,7 @@ AM_LDFLAGS = \
 	@ELEMENTARY_LIBS@	\
 	@GLIB_LIBS@		\
 	@MOKOSUITE_LIBS@	\
-	-Ltwitter -ltwitter
+	-lreadline -Ltwitter -ltwitter
 
 
 bin_PROGRAMS = micromoko

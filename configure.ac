@@ -17,7 +17,7 @@ dnl Dependencies
 ELEMENTARY_REQUIRED=0.0.0
 GLIB_REQUIRED=2.18.0
 MOKOSUITE_REQUIRED=1.0.99
-LIBSOUP_REQUIRED=2.30
+REST_REQUIRED=0.6
 
 PKG_CHECK_MODULES(GLIB,
   glib-2.0 >= $GLIB_REQUIRED
@@ -33,8 +33,8 @@ PKG_CHECK_MODULES(MOKOSUITE,
   mokosuite-ui >= $MOKOSUITE_REQUIRED
 )
 
-PKG_CHECK_MODULES(SOUP,
-  libsoup-2.4 >= $LIBSOUP_REQUIRED
+PKG_CHECK_MODULES(REST,
+  rest-0.6 >= $REST_REQUIRED
 )
 
 AC_ARG_ENABLE(debug,
@@ -96,7 +96,6 @@ AC_OUTPUT([
 Makefile
 src/Makefile
 src/twitter/Makefile
-src/twitter/oauth/Makefile
 data/Makefile
 data/themes/Makefile
 data/themes/gry/Makefile

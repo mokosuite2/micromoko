@@ -28,7 +28,9 @@
 #include <libintl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <mokosuite/utils/utils.h>
 #include <mokosuite/utils/remote-config-service.h>
+#include <rest/rest-proxy.h>
 
 // default log domain
 #undef EINA_LOG_DOMAIN_DEFAULT
@@ -41,6 +43,44 @@ extern int _log_dom;
 #define LOG_LEVEL   EINA_LOG_LEVEL_INFO
 #endif
 
+#define TWITTER_BASE_URI            "https://api.twitter.com/"
+#define TWITTER_REQUEST_TOKEN_FUNC  "oauth/request_token"
+#define TWITTER_ACCESS_TOKEN_FUNC   "oauth/access_token"
+#define TWITTER_AUTHORIZE_FUNC      "oauth/authorize"
+
+
+typedef struct _oauth_token
+{
+    char* key;      // oauth_token
+    char* secret;   // oauth_token_secret
+} oauth_token;
+
+typedef struct _twitter_session
+{
+    oauth_token consumer;   // for consuming APIs
+    oauth_token request;    // for first-time authentication
+    oauth_token access;     // for accessing APIs
+
+    const char* username;
+
+    /* private */
+    RestProxy* oauth_proxy;
+
+    void* request_token_cb;
+    void* request_token_data;
+    void* access_token_cb;
+    void* access_token_data;
+} twitter_session;
+
+// request token callback
+typedef void (*OAuthTokenCallback)(twitter_session* session, void* userdata);
+
+bool twitter_session_oauth_access_token(twitter_session* session, const char* pin, OAuthTokenCallback callback, void* userdata);
+bool twitter_session_oauth_request_token(twitter_session* session, OAuthTokenCallback callback, void* userdata);
+
+void twitter_session_set_access_token(twitter_session* session, oauth_token* access);
+
+twitter_session* twitter_session_new(oauth_token* consumer);
 
 void twitter_init(RemoteConfigService* config);
 

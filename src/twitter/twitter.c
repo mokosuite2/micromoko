@@ -24,15 +24,11 @@
 #include <mokosuite/ui/gui.h>
 #include <glib.h>
 #include <dbus/dbus-glib-bindings.h>
+#include <rest/rest-proxy.h>
+#include <rest/oauth-proxy.h>
 
 #include "twitter.h"
 #include "private.h"
-
-// TEST
-#include "oauth/oauth.h"
-#include "libsoup/soup.h"
-#include <readline/readline.h>
-#include <readline/history.h>
 
 // default log domain
 int _micromoko_twitter_utils_log_dom = -1;
@@ -40,57 +36,108 @@ int _micromoko_twitter_utils_log_dom = -1;
 // global
 RemoteConfigService* config = NULL;
 
-// TEST
-const char *req_c_key         = "dY49wvIY7386ET15vCRVQ"; //< consumer key
-const char *req_c_secret      = "D8wKnvbTQqxJmxBC0JyHVY6LpHdpTBbJwyISlrUg8"; //< consumer secret
 
-static void _access_token(SoupSession *session, SoupMessage *msg, gpointer user_data)
+static void oauth_token_copy(oauth_token* dest, oauth_token* src)
 {
-    DEBUG("HTTP response %d %s", msg->status_code, msg->reason_phrase);
-    SoupMessageBody* body = msg->response_body;
-    DEBUG("Response data: %s", body->data);
+    if (dest == NULL || src == NULL) return;
+
+    dest->key = strdup(src->key);
+    dest->secret = strdup(src->secret);
 }
 
-static void _request_token(SoupSession *session, SoupMessage *msg, gpointer user_data)
+static void oauth_token_free_keys(oauth_token* token)
 {
-    const char *authorize_uri     = "https://api.twitter.com/oauth/authorize";
-    const char *access_token_uri  = "https://api.twitter.com/oauth/access_token";
-
-    DEBUG("HTTP response %d %s", msg->status_code, msg->reason_phrase);
-    SoupMessageBody* body = msg->response_body;
-    DEBUG("Response data: %s", body->data);
-
-    int rc = 0;
-    char** rv = NULL;
-
-    rc = oauth_split_url_parameters(body->data, &rv);
-    char* key = strdup(get_param(rv, rc, "oauth_token"));
-    char* secret = strdup(get_param(rv, rc, "oauth_token_secret"));
-    free_array(&rc, &rv);
-
-    DEBUG("\toauth_token=%s", key);
-    DEBUG("\toauth_token_secret=%s", secret);
-    INFO("Goto URL:\n\t%s?oauth_token=%s", authorize_uri, key);
-
-    char* postarg = NULL;
-    char* pin = readline("PIN: ");
-
-    char* uri = g_strdup_printf("%s?oauth_verifier=%s", access_token_uri, pin);
-    char* req_url = oauth_sign_url2(uri, &postarg, OA_HMAC, NULL, req_c_key, req_c_secret, key, secret);
-    g_free(uri);
-
-    DEBUG("request URL: %s", req_url);
-    DEBUG("post args: %s", postarg);
-
-    msg = soup_message_new("POST", req_url);
-    soup_message_set_request(msg, "application/x-www-form-urlencoded", SOUP_MEMORY_COPY, postarg, strlen(postarg));
-    soup_session_queue_message(session, msg, _access_token, NULL);
-
-    free(req_url);
-    free(postarg);
-    free(pin);
+    free(token->key);
+    free(token->secret);
 }
-// TEST
+
+static void oauth_proxy(twitter_session* session)
+{
+    if (!session->oauth_proxy)
+        session->oauth_proxy = oauth_proxy_new(session->consumer.key, session->consumer.secret, TWITTER_BASE_URI, FALSE);
+}
+
+static void _access_token(OAuthProxy* proxy, GError* error, GObject* weak_object, void* userdata)
+{
+    DEBUG("got access token %s", oauth_proxy_get_token(proxy));
+    twitter_session* sess = userdata;
+    sess->access.key = strdup(oauth_proxy_get_token(proxy));
+    sess->access.secret = strdup(oauth_proxy_get_token_secret(proxy));
+
+    // user callback
+    OAuthTokenCallback cb = sess->access_token_cb;
+    if (cb)
+        (cb)(sess, sess->access_token_data);
+}
+
+static void _request_token(OAuthProxy* proxy, GError* error, GObject* weak_object, void* userdata)
+{
+    DEBUG("got request token %s", oauth_proxy_get_token(proxy));
+    twitter_session* sess = userdata;
+    sess->request.key = strdup(oauth_proxy_get_token(proxy));
+    sess->request.secret = strdup(oauth_proxy_get_token_secret(proxy));
+
+    // user callback
+    OAuthTokenCallback cb = sess->request_token_cb;
+    if (cb)
+        (cb)(sess, sess->request_token_data);
+}
+
+/**
+ * Requests an OAuth access token to Twitter.
+ * @param session
+ * @param callback callback to be called when the access token has been requested
+ * @return TRUE on success
+ */
+bool twitter_session_oauth_access_token(twitter_session* session, const char* pin, OAuthTokenCallback callback, void* userdata)
+{
+    session->access_token_cb = callback;
+    session->access_token_data = userdata;
+
+    oauth_proxy(session);
+    return oauth_proxy_access_token_async(OAUTH_PROXY(session->oauth_proxy),
+        TWITTER_ACCESS_TOKEN_FUNC, pin, _access_token, NULL, session, NULL);
+}
+
+/**
+ * Requests an OAuth request token to Twitter.
+ * @param session
+ * @param callback callback to be called when the request token has been requested
+ * @return TRUE on success
+ */
+bool twitter_session_oauth_request_token(twitter_session* session, OAuthTokenCallback callback, void* userdata)
+{
+    session->request_token_cb = callback;
+    session->request_token_data = userdata;
+
+    oauth_proxy(session);
+    return oauth_proxy_request_token_async(OAUTH_PROXY(session->oauth_proxy),
+        TWITTER_REQUEST_TOKEN_FUNC, "oob", _request_token, NULL, session, NULL);
+}
+
+/**
+ * Sets an access token for this session.
+ * @param session
+ * @param access
+ */
+void twitter_session_set_access_token(twitter_session* session, oauth_token* access)
+{
+    oauth_token_copy(&session->access, access);
+}
+
+/**
+ * Creates a new Twitter session.
+ * @param consumer API consumer token
+ * @return a new session ready for use
+ */
+twitter_session* twitter_session_new(oauth_token* consumer)
+{
+    twitter_session* s = calloc(1, sizeof(twitter_session));
+    s->consumer.key = strdup(consumer->key);
+    s->consumer.secret = strdup(consumer->secret);
+
+    return s;
+}
 
 void twitter_init(RemoteConfigService* config)
 {
@@ -101,27 +148,4 @@ void twitter_init(RemoteConfigService* config)
 
     eina_log_domain_level_set(MICROMOKO_TWITTER_LOG_NAME, TWITTER_LOG_LEVEL);
     INFO("%s Twitter library version %s", PACKAGE_NAME, VERSION);
-
-    // TEST
-    const char *request_token_uri = "https://api.twitter.com/oauth/request_token";
-
-    char *postarg = NULL;
-    char *req_url;
-
-    req_url = oauth_sign_url2(request_token_uri, &postarg, OA_HMAC, NULL, req_c_key, req_c_secret, NULL, NULL);
-
-    DEBUG("request URL: %s", req_url);
-    DEBUG("post args: %s", postarg);
-
-    // prova una richiesta async
-    SoupSession* session = soup_session_async_new();
-
-    SoupMessage *msg;
-    msg = soup_message_new("POST", req_url);
-    soup_message_set_request(msg, "application/x-www-form-urlencoded", SOUP_MEMORY_COPY, postarg, strlen(postarg));
-    soup_session_queue_message(session, msg, _request_token, NULL);
-
-    free(postarg);
-    free(req_url);
-    // TEST
 }

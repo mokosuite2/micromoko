@@ -25,6 +25,10 @@
 #include <glib.h>
 #include <dbus/dbus-glib-bindings.h>
 
+// TEST
+#include <readline/readline.h>
+#include <readline/history.h>
+
 #include "globals.h"
 #include "twitter/twitter.h"
 
@@ -37,6 +41,24 @@ int _log_dom = -1;
 
 RemoteConfigService* home_config = NULL;
 
+static void _access_token(twitter_session* session, void* userdata)
+{
+    // TODO now what?
+    remote_config_service_set_string(home_config, "auth", "access_token", session->access.key);
+    remote_config_service_set_string(home_config, "auth", "access_token_secret", session->access.secret);
+}
+
+static void _request_token(twitter_session* session, void* userdata)
+{
+    // TODO access token for pin :)
+    char* cmd = g_strdup_printf("xdg-open \"%s%s?oauth_token=%s\"",
+        TWITTER_BASE_URI, TWITTER_AUTHORIZE_FUNC, session->request.key);
+    system(cmd);
+    g_free(cmd);
+
+    char* pin = readline("PIN: ");
+    twitter_session_oauth_access_token(session, pin, _access_token, userdata);
+}
 
 int main(int argc, char* argv[])
 {
@@ -77,6 +99,24 @@ int main(int argc, char* argv[])
     // TODO additional themes
 
     // TODO public timeline or last open window?
+
+    // TEST twitter test :)
+    oauth_token consumer = {
+        "dY49wvIY7386ET15vCRVQ",
+        "D8wKnvbTQqxJmxBC0JyHVY6LpHdpTBbJwyISlrUg8"
+    };
+    twitter_session* sess = twitter_session_new(&consumer);
+
+    oauth_token access_token = {NULL, NULL};
+    remote_config_service_get_string(home_config, "auth", "access_token", &access_token.key);
+    remote_config_service_get_string(home_config, "auth", "access_token_secret", &access_token.secret);
+    if (access_token.key != NULL)
+        twitter_session_set_access_token(sess, &access_token);
+    else
+        twitter_session_oauth_request_token(sess, _request_token, NULL);
+
+
+    // TEST twitter test
 
     elm_run();
     elm_shutdown();
