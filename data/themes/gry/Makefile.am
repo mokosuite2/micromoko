@@ -1,6 +1,6 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-filesdir = $(datadir)/microtwitter/themes
+filesdir = $(datadir)/micromoko/themes
 files_DATA = gry.edj
 
 EDC_DEPS =

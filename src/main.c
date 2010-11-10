@@ -1,5 +1,5 @@
 /*
- * MicroTwitter
+ * Micromoko
  * Entry point
  * Copyright (C) 2009-2010 Daniele Ricci <daniele.athome@gmail.com>
  *
@@ -26,9 +26,10 @@
 #include <dbus/dbus-glib-bindings.h>
 
 #include "globals.h"
+#include "twitter/twitter.h"
 
-#define MICROTWITTER_NAME               "org.mokosuite.twitter"
-#define MICROTWITTER_CONFIG_PATH        MOKOSUITE_DBUS_PATH "/Twitter/Config"
+#define MICROMOKO_NAME               "org.mokosuite.micromoko"
+#define MICROMOKO_CONFIG_PATH        MOKOSUITE_DBUS_PATH "/Micromoko/Config"
 
 
 // default log domain
@@ -51,27 +52,28 @@ int main(int argc, char* argv[])
 
     EINA_LOG_INFO("%s version %s", PACKAGE_NAME, VERSION);
 
-    /* other things */
+    // glib integration
     mokosuite_utils_init();
     mokosuite_utils_glib_init(TRUE);
     mokosuite_ui_init(argc, argv);
-
-    EINA_LOG_DBG("Loading data from %s", MICROTWITTER_DATADIR);
+    EINA_LOG_DBG("Loading data from %s", MICROMOKO_DATADIR);
 
     // dbus name
     DBusGConnection* session_bus = dbus_session_bus();
-    if (!session_bus || !dbus_request_name(session_bus, MICROTWITTER_NAME))
+    if (!session_bus || !dbus_request_name(session_bus, MICROMOKO_NAME))
         return EXIT_FAILURE;
 
     // config database
     char* cfg_file = g_strdup_printf("%s/.config/%s/settings.conf", g_get_home_dir(), PACKAGE);
     home_config = remote_config_service_new(session_bus,
-        MICROTWITTER_CONFIG_PATH,
+        MICROMOKO_CONFIG_PATH,
         cfg_file);
     g_free(cfg_file);
 
+    // twitter init
+    twitter_init(home_config);
 
-    elm_theme_extension_add(NULL, MICROTWITTER_DATADIR "/theme.edj");
+    elm_theme_extension_add(NULL, MICROMOKO_DATADIR "/theme.edj");
     // TODO additional themes
 
     // TODO public timeline or last open window?

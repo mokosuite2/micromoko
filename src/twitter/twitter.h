@@ -1,6 +1,6 @@
 /*
- * Micromoko
- * Globals definitions
+ * Micromoko Twitter library
+ * Library entry point
  * Copyright (C) 2009-2010 Daniele Ricci <daniele.athome@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -18,14 +18,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef __GLOBALS_H
-#define __GLOBALS_H
+#ifndef __MICROMOKO_TWITTER_H
+#define __MICROMOKO_TWITTER_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-#include <Elementary.h>
 #include <libintl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,10 +41,8 @@ extern int _log_dom;
 #define LOG_LEVEL   EINA_LOG_LEVEL_INFO
 #endif
 
-#define MICROMOKO_DATADIR        DATADIR "/micromoko"
 
-extern RemoteConfigService* home_config;
+void twitter_init(RemoteConfigService* config);
 
-void get_screen_size(int *w, int *h);
 
-#endif  /* __GLOBALS_H */
+#endif  /* __MICROMOKO_TWITTER_H */

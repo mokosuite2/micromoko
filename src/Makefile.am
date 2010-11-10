@@ -1,3 +1,5 @@
+SUBDIRS = twitter
+
 MAINTAINERCLEANFILES = Makefile.in
 
 AM_CPPFLAGS = \
@@ -11,12 +13,13 @@ AM_CPPFLAGS = \
 AM_LDFLAGS = \
 	@ELEMENTARY_LIBS@	\
 	@GLIB_LIBS@		\
-	@MOKOSUITE_LIBS@
+	@MOKOSUITE_LIBS@	\
+	-Ltwitter -ltwitter
 
 
-bin_PROGRAMS = microtwitter
+bin_PROGRAMS = micromoko
 
-microtwitter_SOURCES =	\
+micromoko_SOURCES =	\
 	globals.h	\
 	main.c		\
 	timeline.c	\
