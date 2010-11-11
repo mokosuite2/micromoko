@@ -25,12 +25,9 @@
 #include <glib.h>
 #include <dbus/dbus-glib-bindings.h>
 
-// TEST
-#include <readline/readline.h>
-#include <readline/history.h>
-
 #include "globals.h"
 #include "twitter/twitter.h"
+#include "auth.h"
 
 #define MICROMOKO_NAME               "org.mokosuite.micromoko"
 #define MICROMOKO_CONFIG_PATH        MOKOSUITE_DBUS_PATH "/Micromoko/Config"
@@ -40,25 +37,8 @@
 int _log_dom = -1;
 
 RemoteConfigService* home_config = NULL;
+twitter_session* global_session = NULL;
 
-static void _access_token(twitter_session* session, void* userdata)
-{
-    // TODO now what?
-    remote_config_service_set_string(home_config, "auth", "access_token", session->access.key);
-    remote_config_service_set_string(home_config, "auth", "access_token_secret", session->access.secret);
-}
-
-static void _request_token(twitter_session* session, void* userdata)
-{
-    // TODO access token for pin :)
-    char* cmd = g_strdup_printf("xdg-open \"%s%s?oauth_token=%s\"",
-        TWITTER_BASE_URI, TWITTER_AUTHORIZE_FUNC, session->request.key);
-    system(cmd);
-    g_free(cmd);
-
-    char* pin = readline("PIN: ");
-    twitter_session_oauth_access_token(session, pin, _access_token, userdata);
-}
 
 int main(int argc, char* argv[])
 {
@@ -98,25 +78,33 @@ int main(int argc, char* argv[])
     elm_theme_extension_add(NULL, MICROMOKO_DATADIR "/theme.edj");
     // TODO additional themes
 
-    // TODO public timeline or last open window?
-
-    // TEST twitter test :)
+    // twitter session
+    // TODO read consumer token from configuration?
     oauth_token consumer = {
         "dY49wvIY7386ET15vCRVQ",
         "D8wKnvbTQqxJmxBC0JyHVY6LpHdpTBbJwyISlrUg8"
     };
-    twitter_session* sess = twitter_session_new(&consumer);
+    global_session = twitter_session_new(&consumer);
 
+    // if not yet authenticated, open twitter authorization window
     oauth_token access_token = {NULL, NULL};
     remote_config_service_get_string(home_config, "auth", "access_token", &access_token.key);
     remote_config_service_get_string(home_config, "auth", "access_token_secret", &access_token.secret);
-    if (access_token.key != NULL)
-        twitter_session_set_access_token(sess, &access_token);
-    else
-        twitter_session_oauth_request_token(sess, _request_token, NULL);
 
+    // access token is present, go to last open window
+    if (access_token.key != NULL && strlen(access_token.key) && access_token.secret == NULL && strlen(access_token.secret)) {
+        // TODO last open window
+        EINA_LOG_DBG("open last window");
+    }
 
-    // TEST twitter test
+    // no access token, authorization needed
+    else {
+        // auth window
+        EINA_LOG_DBG("open auth window");
+        auth_win();
+    }
+
+    // TODO public timeline or last open window?
 
     elm_run();
     elm_shutdown();

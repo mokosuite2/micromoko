@@ -10,8 +10,20 @@ AC_GNU_SOURCE
 AC_PROG_CC
 AC_PROG_LIBTOOL
 
-AM_GNU_GETTEXT(external)
-AM_GNU_GETTEXT_VERSION([0.12.1])
+dnl Intl for gettext
+IT_PROG_INTLTOOL([0.35.0])
+
+if test "x$localedir" == x
+then
+    localedir='${datadir}/locale'
+    AC_SUBST(localedir)
+    AM_GLIB_DEFINE_LOCALEDIR([localedir])
+fi
+
+AM_GLIB_GNU_GETTEXT
+GETTEXT_PACKAGE="micromoko"
+AC_SUBST(GETTEXT_PACKAGE)
+AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, ["$GETTEXT_PACKAGE"], [Name of the gettext message domain])
 
 dnl Dependencies
 ELEMENTARY_REQUIRED=0.0.0

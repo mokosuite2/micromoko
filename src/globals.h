@@ -31,6 +31,8 @@
 #include <stdlib.h>
 #include <mokosuite/utils/remote-config-service.h>
 
+#include "twitter/twitter.h"
+
 // default log domain
 #undef EINA_LOG_DOMAIN_DEFAULT
 #define EINA_LOG_DOMAIN_DEFAULT _log_dom
@@ -45,6 +47,7 @@ extern int _log_dom;
 #define MICROMOKO_DATADIR        DATADIR "/micromoko"
 
 extern RemoteConfigService* home_config;
+extern twitter_session* global_session;
 
 void get_screen_size(int *w, int *h);
 

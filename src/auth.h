@@ -1,6 +1,6 @@
 /*
  * Micromoko
- * Generic timeline window
+ * Authorization window
  * Copyright (C) 2009-2010 Daniele Ricci <daniele.athome@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -18,3 +18,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifndef __AUTH_H
+#define __AUTH_H
+
+
+void auth_win(void);
+
+
+#endif  /* __AUTH_H */

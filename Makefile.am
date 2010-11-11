@@ -21,6 +21,6 @@ MAINTAINERCLEANFILES = \
 	po/en@boldquot.header \
 	po/en@quot.header \
 	po/insert-header.sin \
-	po/microtwitter.pot \
+	po/micromoko.pot \
 	po/quot.sed \
 	po/remove-potcdate.sin

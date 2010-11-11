@@ -1,5 +1,5 @@
 /*
- * MicroTwitter
+ * Micromoko
  * Generic timeline window
  * Copyright (C) 2009-2010 Daniele Ricci <daniele.athome@gmail.com>
  *
