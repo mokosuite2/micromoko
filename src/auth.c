@@ -149,8 +149,9 @@ void auth_win(void)
         mokowin_pack_end(win, msg_status, FALSE);
         evas_object_show(msg_status);
 
-        // TEST
+        #ifdef DEBUG
         evas_object_resize(win->win, 480, 640);
+        #endif
     }
 
     mokowin_activate(win);

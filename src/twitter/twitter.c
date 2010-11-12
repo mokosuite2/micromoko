@@ -26,6 +26,7 @@
 #include <dbus/dbus-glib-bindings.h>
 #include <rest/rest-proxy.h>
 #include <rest/oauth-proxy.h>
+#include <stdarg.h>
 
 #include "twitter.h"
 #include "private.h"
@@ -51,10 +52,27 @@ static void oauth_token_free_keys(oauth_token* token)
     free(token->secret);
 }
 
-static void oauth_proxy(twitter_session* session)
+static void oauth_proxy(twitter_session* session, const char* key, const char* secret)
 {
-    if (!session->oauth_proxy)
-        session->oauth_proxy = oauth_proxy_new(session->consumer.key, session->consumer.secret, TWITTER_BASE_URI, FALSE);
+    if (!session->oauth_proxy) {
+        if (key != NULL && secret != NULL)
+            session->oauth_proxy = oauth_proxy_new_with_token(session->consumer.key, session->consumer.secret, key, secret, TWITTER_BASE_URI, FALSE);
+        else
+            session->oauth_proxy = oauth_proxy_new(session->consumer.key, session->consumer.secret, TWITTER_BASE_URI, FALSE);
+    }
+}
+
+static RestProxyCall* call_proxy(twitter_session* session, const char* function, const char* method)
+{
+    char* req = g_strdup_printf("%s.%s", function, DEFAULT_CALL_TYPE);
+    DEBUG("creating call for request \"%s\" (oauth_proxy=%p)", req, session->oauth_proxy);
+    RestProxyCall* call = rest_proxy_new_call(session->oauth_proxy);
+    rest_proxy_call_set_function(call, req);
+
+    rest_proxy_call_set_method(call, method);
+
+    g_free(req);
+    return call;
 }
 
 static void _access_token(OAuthProxy* proxy, GError* error, GObject* weak_object, void* userdata)
@@ -83,6 +101,60 @@ static void _request_token(OAuthProxy* proxy, GError* error, GObject* weak_objec
         (cb)(sess, sess->request_token_data);
 }
 
+static void _call_response(RestProxyCall *call_proxy, GError* error, GObject* weak_object, void* userdata)
+{
+    twitter_call* call = userdata;
+
+    const char* payload = rest_proxy_call_get_payload(call->call_proxy);
+    DEBUG("response:\n%s", payload);
+
+    TwitterCallResponseCallback cb = call->callback;
+    if (cb)
+        (cb)(call->session, call, payload, call->userdata);
+}
+
+/**
+ * Creates a new Twitter command request and immediately starts it.
+ * @param session
+ * @param function
+ * @param method
+ * @param ... arguments
+ * @return the new call
+ */
+twitter_call* twitter_session_call_new(twitter_session* session,
+            const char* function, const char* method,
+            TwitterCallResponseCallback callback, void* userdata, ...)
+{
+    twitter_call* call = calloc(1, sizeof(twitter_call));
+    va_list ap;
+    int i = 0;
+    const char* arg;
+    const char* arg_name = NULL;
+
+    call->session = session;
+    call->function = strdup(function);
+    call->method = strdup(method);
+    call->callback = callback;
+    call->userdata = userdata;
+    call->call_proxy = call_proxy(session, function, method);
+
+    va_start(ap, userdata);
+    while ((arg = va_arg(ap, const char*))) {
+        if (i % 2) {
+            DEBUG("argument: name=\"%s\", value=\"%s\"", arg_name, arg);
+            rest_proxy_call_add_param(call->call_proxy, arg_name, arg);
+        }
+        else
+            arg_name = arg;
+
+        i++;
+    }
+    va_end(ap);
+
+    rest_proxy_call_async (call->call_proxy, _call_response, NULL, call, NULL);
+    return call;
+}
+
 /**
  * Requests an OAuth access token to Twitter.
  * @param session
@@ -94,7 +166,7 @@ bool twitter_session_oauth_access_token(twitter_session* session, const char* pi
     session->access_token_cb = callback;
     session->access_token_data = userdata;
 
-    oauth_proxy(session);
+    oauth_proxy(session, NULL, NULL);
     return oauth_proxy_access_token_async(OAUTH_PROXY(session->oauth_proxy),
         TWITTER_ACCESS_TOKEN_FUNC, pin, _access_token, NULL, session, NULL);
 }
@@ -110,7 +182,7 @@ bool twitter_session_oauth_request_token(twitter_session* session, OAuthTokenCal
     session->request_token_cb = callback;
     session->request_token_data = userdata;
 
-    oauth_proxy(session);
+    oauth_proxy(session, NULL, NULL);
     return oauth_proxy_request_token_async(OAUTH_PROXY(session->oauth_proxy),
         TWITTER_REQUEST_TOKEN_FUNC, "oob", _request_token, NULL, session, NULL);
 }
@@ -123,6 +195,23 @@ bool twitter_session_oauth_request_token(twitter_session* session, OAuthTokenCal
 void twitter_session_set_access_token(twitter_session* session, oauth_token* access)
 {
     oauth_token_copy(&session->access, access);
+    if (session->oauth_proxy) {
+        oauth_proxy_set_token(OAUTH_PROXY(session->oauth_proxy), access->key);
+        oauth_proxy_set_token_secret(OAUTH_PROXY(session->oauth_proxy), access->secret);
+    }
+    else {
+        oauth_proxy(session, access->key, access->secret);
+    }
+}
+
+void twitter_session_destroy(twitter_session* session)
+{
+    free(session->username);
+    oauth_token_free_keys(&session->consumer);
+    oauth_token_free_keys(&session->request);
+    oauth_token_free_keys(&session->access);
+
+    g_object_unref(session->oauth_proxy);
 }
 
 /**

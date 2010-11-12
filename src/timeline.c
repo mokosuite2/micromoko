@@ -34,6 +34,10 @@ static void _delete(void* mokowin, Evas_Object* obj, void* event_info)
     mokowin_destroy((MokoWin *)mokowin);
 }
 
+static void _home_timeline(twitter_session* session, twitter_call* call, const char* payload, void* userdata)
+{
+    EINA_LOG_DBG("PAYLOAD:\n%s", payload);
+}
 
 MokoWin* timeline_new(int type)
 {
@@ -66,9 +70,15 @@ MokoWin* timeline_new(int type)
 
     // TODO robbaccia
 
-    // TEST
+    #ifdef DEBUG
     evas_object_resize(win->win, 480, 640);
+    #endif
     mokowin_activate(win);
+
+    // TEST
+    twitter_session_call_new(global_session,
+        "statuses/home_timeline", "GET",
+        _home_timeline, NULL);
 
     return win;
 }

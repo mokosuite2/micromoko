@@ -94,6 +94,8 @@ int main(int argc, char* argv[])
 
     // access token is present, go to last open window
     if (access_token.key != NULL && strlen(access_token.key) && access_token.secret != NULL && strlen(access_token.secret)) {
+        twitter_session_set_access_token(global_session, &access_token);
+
         // TODO last open window
         EINA_LOG_DBG("open last window");
         timeline_new(TIMELINE_USER);

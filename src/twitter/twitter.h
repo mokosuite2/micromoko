@@ -61,7 +61,7 @@ typedef struct _twitter_session
     oauth_token request;    // for first-time authentication
     oauth_token access;     // for accessing APIs
 
-    const char* username;
+    char* username;
 
     /* private */
     RestProxy* oauth_proxy;
@@ -72,6 +72,27 @@ typedef struct _twitter_session
     void* access_token_data;
 } twitter_session;
 
+typedef struct _twitter_call
+{
+    twitter_session* session;
+
+    char* function;
+    char* method;
+    // TODO char** args;
+
+    /* private */
+    RestProxyCall* call_proxy;
+    void* callback;
+    void* userdata;
+} twitter_call;
+
+// api call callback
+typedef void (*TwitterCallResponseCallback)(twitter_session* session, twitter_call* call, const char* payload, void* userdata);
+
+twitter_call* twitter_session_call_new(twitter_session* session,
+            const char* function, const char* method,
+            TwitterCallResponseCallback callback, void* userdata, ...);
+
 // request token callback
 typedef void (*OAuthTokenCallback)(twitter_session* session, void* userdata);
 
@@ -80,6 +101,7 @@ bool twitter_session_oauth_request_token(twitter_session* session, OAuthTokenCal
 
 void twitter_session_set_access_token(twitter_session* session, oauth_token* access);
 
+void twitter_session_destroy(twitter_session* session);
 twitter_session* twitter_session_new(oauth_token* consumer);
 
 void twitter_init(RemoteConfigService* config);

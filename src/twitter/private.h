@@ -60,4 +60,8 @@ extern int _micromoko_twitter_utils_log_dom;
 #endif
 #define WARN(...) EINA_LOG_DOM_WARN(MICROMOKO_TWITTER_LOG_DOM, __VA_ARGS__)
 
+
+#define DEFAULT_CALL_TYPE       "xml"
+
+
 #endif  /* __MICROMOKO_TWITTER_PRIVATE_H */
