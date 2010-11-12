@@ -18,3 +18,17 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifndef __TIMELINE_H
+#define __TIMELINE_H
+
+#include <mokosuite/ui/gui.h>
+
+enum {
+    TIMELINE_PUBLIC = 0,
+    TIMELINE_USER
+};
+
+MokoWin* timeline_new(int type);
+
+
+#endif  /* __TIMELINE_H */

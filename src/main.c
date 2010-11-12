@@ -28,6 +28,7 @@
 #include "globals.h"
 #include "twitter/twitter.h"
 #include "auth.h"
+#include "timeline.h"
 
 #define MICROMOKO_NAME               "org.mokosuite.micromoko"
 #define MICROMOKO_CONFIG_PATH        MOKOSUITE_DBUS_PATH "/Micromoko/Config"
@@ -92,9 +93,10 @@ int main(int argc, char* argv[])
     remote_config_service_get_string(home_config, "auth", "access_token_secret", &access_token.secret);
 
     // access token is present, go to last open window
-    if (access_token.key != NULL && strlen(access_token.key) && access_token.secret == NULL && strlen(access_token.secret)) {
+    if (access_token.key != NULL && strlen(access_token.key) && access_token.secret != NULL && strlen(access_token.secret)) {
         // TODO last open window
         EINA_LOG_DBG("open last window");
+        timeline_new(TIMELINE_USER);
     }
 
     // no access token, authorization needed
@@ -103,8 +105,6 @@ int main(int argc, char* argv[])
         EINA_LOG_DBG("open auth window");
         auth_win();
     }
-
-    // TODO public timeline or last open window?
 
     elm_run();
     elm_shutdown();

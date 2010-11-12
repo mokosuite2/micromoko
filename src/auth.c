@@ -25,6 +25,7 @@
 #include "globals.h"
 #include "twitter/twitter.h"
 #include "auth.h"
+#include "timeline.h"
 
 #include <glib/gi18n-lib.h>
 
@@ -37,6 +38,10 @@ static void _delete(void* mokowin, Evas_Object* obj, void* event_info)
 {
     // TODO che famo?
     mokowin_destroy((MokoWin *)mokowin);
+    win = NULL;
+    btn_auth = NULL;
+    msg_status = NULL;
+    pin_entry = NULL;
 }
 
 static void update_status(const char* status)
@@ -46,25 +51,42 @@ static void update_status(const char* status)
 
 static void _access_token(twitter_session* session, void* userdata)
 {
-    // TODO now what?
+    update_status(_("Authorization OK!"));
     remote_config_service_set_string(home_config, "auth", "access_token", session->access.key);
     remote_config_service_set_string(home_config, "auth", "access_token_secret", session->access.secret);
+
+    // open timeline :)
+    if (win) mokowin_destroy(win);
+    timeline_new(TIMELINE_USER);
+}
+
+static void _confirm_access(void* data, Evas_Object* obj, void* event_info)
+{
+    elm_object_disabled_set(obj, TRUE);
+    elm_entry_editable_set(pin_entry, FALSE);
+    update_status(_("Requesting access token..."));
+    twitter_session_oauth_access_token(global_session, elm_entry_entry_get(pin_entry), _access_token, data);
 }
 
 static bool _pin_response(void* userdata)
 {
-    // remove auth button
-    evas_object_del(btn_auth);
-    btn_auth = NULL;
-
     pin_entry = elm_entry_add(win->win);
-    evas_object_size_hint_weight_set(pin_entry, EVAS_HINT_EXPAND, 0.0);
-    evas_object_size_hint_align_set(pin_entry, EVAS_HINT_FILL, 0.5);
+    evas_object_size_hint_weight_set(pin_entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_size_hint_align_set(pin_entry, 0.5, 0.5);
 
-    elm_box_pack_before(win->win, pin_entry, msg_status);
+    elm_box_pack_after(win->vbox, pin_entry, msg_status);
     evas_object_show(pin_entry);
 
-    update_status(_("Paste PIN code above."));
+    Evas_Object* btn_login = elm_button_add(win->win);
+    elm_button_label_set(btn_login, _("Confirm"));
+    evas_object_size_hint_weight_set(btn_login, EVAS_HINT_EXPAND, 0.0);
+    evas_object_size_hint_align_set(btn_login, EVAS_HINT_FILL, 0.5);
+    evas_object_smart_callback_add(btn_login, "clicked", _confirm_access, userdata);
+
+    elm_box_pack_after(win->vbox, btn_login, pin_entry);
+    evas_object_show(btn_login);
+
+    update_status(_("Paste PIN code below."));
     return FALSE;
 }
 
@@ -78,9 +100,7 @@ static void _request_token(twitter_session* session, void* userdata)
     system(cmd);
     g_free(cmd);
 
-    ecore_timer_add(5, _pin_response, NULL);
-    //twitter_session_oauth_access_token(session, pin, _access_token, userdata);
-    // TODO swich UI to pin request :)
+    ecore_timer_add(5, _pin_response, userdata);
 }
 
 static void _authorize(void* data, Evas_Object* obj, void* event_info)
@@ -88,7 +108,7 @@ static void _authorize(void* data, Evas_Object* obj, void* event_info)
     // start authentication
     elm_object_disabled_set(obj, TRUE);
     update_status(_("Requesting token..."));
-    twitter_session_oauth_request_token(global_session, _request_token, NULL);
+    twitter_session_oauth_request_token(global_session, _request_token, data);
 }
 
 void auth_win(void)
@@ -104,7 +124,7 @@ void auth_win(void)
 
         elm_win_title_set(win->win, _("Authorization"));
 
-        mokowin_create_vbox(win, FALSE);
+        mokowin_create_vbox(win, TRUE);
         mokowin_set_title(win, _("Authorization"));
 
         //mokowin_menu_enable(win);
@@ -117,7 +137,7 @@ void auth_win(void)
         evas_object_size_hint_align_set(btn_auth, EVAS_HINT_FILL, 0.5);
         evas_object_smart_callback_add(btn_auth, "clicked", _authorize, NULL);
 
-        mokowin_pack_end(win, btn_auth, FALSE);
+        mokowin_pack_start(win, btn_auth, FALSE);
         evas_object_show(btn_auth);
 
         // label/status

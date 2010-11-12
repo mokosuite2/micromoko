@@ -18,3 +18,57 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <Elementary.h>
+#include <mokosuite/utils/utils.h>
+#include <mokosuite/ui/gui.h>
+
+#include "globals.h"
+#include "twitter/twitter.h"
+#include "timeline.h"
+
+#include <glib/gi18n-lib.h>
+
+static void _delete(void* mokowin, Evas_Object* obj, void* event_info)
+{
+    // TODO che famo?
+    mokowin_destroy((MokoWin *)mokowin);
+}
+
+
+MokoWin* timeline_new(int type)
+{
+    MokoWin* win = mokowin_new("micromoko_timeline", TRUE);
+    if (win == NULL) {
+        EINA_LOG_ERR("cannot create timeline window.");
+        return NULL;
+    }
+
+    win->delete_callback = _delete;
+
+    elm_win_title_set(win->win, _("Micromoko"));
+
+    mokowin_create_vbox(win, TRUE);
+    const char* title;
+    switch (type) {
+        case TIMELINE_USER:
+            title = "User timeline";
+            break;
+        case TIMELINE_PUBLIC:
+            title = "Public timeline";
+            break;
+        default:
+            title = "Timeline";
+    }
+    mokowin_set_title(win, _(title));
+
+    //mokowin_menu_enable(win);
+    //mokowin_menu_set(win, make_menu());
+
+    // TODO robbaccia
+
+    // TEST
+    evas_object_resize(win->win, 480, 640);
+    mokowin_activate(win);
+
+    return win;
+}
