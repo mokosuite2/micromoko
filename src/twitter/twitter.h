@@ -87,11 +87,13 @@ typedef struct _twitter_call
 } twitter_call;
 
 // api call callback
-typedef void (*TwitterCallResponseCallback)(twitter_session* session, twitter_call* call, const char* payload, void* userdata);
+typedef void (*TwitterCallCallback)(twitter_session* session, twitter_call* call, const char* payload, goffset length, void* userdata);
 
 twitter_call* twitter_session_call_new(twitter_session* session,
             const char* function, const char* method,
-            TwitterCallResponseCallback callback, void* userdata, ...);
+            TwitterCallCallback callback, void* userdata, ...);
+
+/* -- init and auth -- */
 
 // request token callback
 typedef void (*OAuthTokenCallback)(twitter_session* session, void* userdata);
@@ -105,6 +107,17 @@ void twitter_session_destroy(twitter_session* session);
 twitter_session* twitter_session_new(oauth_token* consumer);
 
 void twitter_init(RemoteConfigService* config);
+
+/* -- timeline -- */
+
+typedef struct _twitter_status
+{
+    // TODO
+} twitter_status;
+
+typedef void (*TwitterTimelineCallback)(twitter_session* session, twitter_call* call, Eina_List* timeline, void* userdata);
+
+twitter_call* twitter_get_home_timeline(twitter_session* session, TwitterTimelineCallback callback, void* userdata);
 
 
 #endif  /* __MICROMOKO_TWITTER_H */

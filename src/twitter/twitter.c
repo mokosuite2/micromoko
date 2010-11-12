@@ -21,9 +21,7 @@
 #include <mokosuite/utils/utils.h>
 #include <mokosuite/utils/remote-config-service.h>
 #include <mokosuite/utils/dbus.h>
-#include <mokosuite/ui/gui.h>
 #include <glib.h>
-#include <dbus/dbus-glib-bindings.h>
 #include <rest/rest-proxy.h>
 #include <rest/oauth-proxy.h>
 #include <stdarg.h>
@@ -106,11 +104,12 @@ static void _call_response(RestProxyCall *call_proxy, GError* error, GObject* we
     twitter_call* call = userdata;
 
     const char* payload = rest_proxy_call_get_payload(call->call_proxy);
-    DEBUG("response:\n%s", payload);
+    goffset len = rest_proxy_call_get_payload_length(call->call_proxy);
+    //DEBUG("response:\n%s", payload);
 
-    TwitterCallResponseCallback cb = call->callback;
+    TwitterCallCallback cb = call->callback;
     if (cb)
-        (cb)(call->session, call, payload, call->userdata);
+        (cb)(call->session, call, payload, len, call->userdata);
 }
 
 /**
@@ -123,7 +122,7 @@ static void _call_response(RestProxyCall *call_proxy, GError* error, GObject* we
  */
 twitter_call* twitter_session_call_new(twitter_session* session,
             const char* function, const char* method,
-            TwitterCallResponseCallback callback, void* userdata, ...)
+            TwitterCallCallback callback, void* userdata, ...)
 {
     twitter_call* call = calloc(1, sizeof(twitter_call));
     va_list ap;

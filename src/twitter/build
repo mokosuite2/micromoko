@@ -1,3 +1,0 @@
-#!/bin/sh
-
-gcc -g -Wall -lreadline `pkg-config --cflags --libs oauth` -o tests tests.c

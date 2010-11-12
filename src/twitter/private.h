@@ -63,5 +63,10 @@ extern int _micromoko_twitter_utils_log_dom;
 
 #define DEFAULT_CALL_TYPE       "xml"
 
+typedef struct _callback_pack
+{
+    void* callback;
+    void* userdata;
+} callback_pack;
 
 #endif  /* __MICROMOKO_TWITTER_PRIVATE_H */

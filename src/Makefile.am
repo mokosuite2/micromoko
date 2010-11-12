@@ -14,9 +14,7 @@ AM_CPPFLAGS = \
 AM_LDFLAGS = \
 	@ELEMENTARY_LIBS@	\
 	@GLIB_LIBS@		\
-	@MOKOSUITE_LIBS@	\
-	-Ltwitter -ltwitter
-
+	@MOKOSUITE_LIBS@
 
 bin_PROGRAMS = micromoko
 
@@ -27,3 +25,5 @@ micromoko_SOURCES =	\
 	timeline.h	\
 	auth.c		\
 	auth.h
+
+micromoko_LDADD = -Ltwitter -ltwitter

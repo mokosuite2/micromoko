@@ -24,9 +24,12 @@
 #include <mokosuite/ui/gui.h>
 
 enum {
-    TIMELINE_PUBLIC = 0,
-    TIMELINE_USER
+    TIMELINE_HOME = 0,
+    TIMELINE_FRIENDS,   // same as TIMELINE_HOME but without retweets
+    TIMELINE_USER,
+    TIMELINE_PUBLIC
 };
+
 
 MokoWin* timeline_new(int type);
 

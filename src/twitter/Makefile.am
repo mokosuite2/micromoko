@@ -6,14 +6,17 @@ AM_CPPFLAGS = \
 		@REST_CFLAGS@		\
 		-Wall
 
-AM_LDFLAGS = \
-	@GLIB_LIBS@		\
-	@MOKOSUITE_LIBS@	\
-	@REST_LIBS@
-
 noinst_LTLIBRARIES = libtwitter.la
 
 libtwitter_la_SOURCES =	\
 	private.h	\
 	twitter.h	\
-	twitter.c
+	twitter.c	\
+	timeline.c
+
+libtwitter_la_LIBADD = \
+	@GLIB_LIBS@		\
+	@MOKOSUITE_LIBS@	\
+	@REST_LIBS@
+
+libtwitter_la_LDFLAGS = -no-undefined

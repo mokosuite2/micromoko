@@ -34,9 +34,9 @@ static void _delete(void* mokowin, Evas_Object* obj, void* event_info)
     mokowin_destroy((MokoWin *)mokowin);
 }
 
-static void _home_timeline(twitter_session* session, twitter_call* call, const char* payload, void* userdata)
+static void _home_timeline(twitter_session* session, twitter_call* call, Eina_List* timeline, void* userdata)
 {
-    EINA_LOG_DBG("PAYLOAD:\n%s", payload);
+    EINA_LOG_DBG("got home timeline");
 }
 
 MokoWin* timeline_new(int type)
@@ -76,9 +76,7 @@ MokoWin* timeline_new(int type)
     mokowin_activate(win);
 
     // TEST
-    twitter_session_call_new(global_session,
-        "statuses/home_timeline", "GET",
-        _home_timeline, NULL);
+    twitter_get_home_timeline(global_session, _home_timeline, NULL);
 
     return win;
 }
