@@ -112,7 +112,13 @@ void twitter_init(RemoteConfigService* config);
 
 typedef struct _twitter_status
 {
-    // TODO
+    char* id;
+    guint64 timestamp;
+
+    char* text;
+    char* source;
+
+    // TODO twitter_user* user;
 } twitter_status;
 
 typedef void (*TwitterTimelineCallback)(twitter_session* session, twitter_call* call, Eina_List* timeline, void* userdata);

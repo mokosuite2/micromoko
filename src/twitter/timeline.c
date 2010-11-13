@@ -30,10 +30,28 @@
 
 twitter_status* parse_status(RestXmlNode* status)
 {
-    twitter_status* e = malloc(sizeof(twitter_status));
+    RestXmlNode* n;
 
-    // TODO :)
+    twitter_status* e = calloc(1, sizeof(twitter_status));
+
+    n = rest_xml_node_find(status, "id");
+    if (n) e->id = strdup(n->content);
+
+    // TODO timestamp
+
+    n = rest_xml_node_find(status, "text");
+    if (n) e->text = strdup(n->content);
+
+    n = rest_xml_node_find(status, "source");
+    if (n) e->source = strdup(n->content);
+
+    // TODO tutto il resto :)
     return e;
+}
+
+static void _dump_child(void* key, void* value, void* data)
+{
+    DEBUG("key = \"%s\", value = %p (compare=%d)", (char*) key, value, strcmp((char*)key, "status"));
 }
 
 static void _timeline(twitter_session* session, twitter_call* call, const char* payload, goffset length, void* userdata)
@@ -52,7 +70,8 @@ static void _timeline(twitter_session* session, twitter_call* call, const char* 
     Eina_List* list = NULL;
 
     // get children (status tags)
-    RestXmlNode* chain = g_hash_table_lookup(root->children, "status");
+    g_hash_table_foreach(root->children, _dump_child, NULL);
+    RestXmlNode* chain = rest_xml_node_find(root, "status");
     while (chain) {
         twitter_status* e = parse_status(chain);
         if (e)

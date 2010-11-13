@@ -20,6 +20,7 @@
 
 #include <Elementary.h>
 #include <mokosuite/utils/utils.h>
+//#include <mokosuite/utils/misc.h>
 #include <mokosuite/ui/gui.h>
 
 #include "globals.h"
@@ -31,12 +32,40 @@
 static void _delete(void* mokowin, Evas_Object* obj, void* event_info)
 {
     // TODO che famo?
-    mokowin_destroy((MokoWin *)mokowin);
+    mokowin_destroy(MOKO_WIN(mokowin));
+}
+
+static Evas_Object* status_bubble(MokoWin* win, const char* user, const char* text, const char* source)
+{
+    Evas_Object* msg = elm_bubble_add(win->win);
+    evas_object_size_hint_weight_set(msg, EVAS_HINT_EXPAND, 0.0);
+    evas_object_size_hint_align_set(msg, EVAS_HINT_FILL, 0.0);
+    elm_bubble_label_set(msg, user);
+    //elm_bubble_info_set(msg, get_time_repr(time(NULL)));
+    elm_bubble_corner_set(msg, "bottom_left");
+    evas_object_show(msg);
+
+    Evas_Object* lbl = elm_anchorblock_add(win->win);
+    evas_object_size_hint_weight_set(lbl, EVAS_HINT_EXPAND, 0.0);
+    evas_object_size_hint_align_set(lbl, 0.0, 0.0);
+    elm_anchorblock_text_set(lbl, text);
+    evas_object_show(lbl);
+    elm_bubble_content_set(msg, lbl);
+
+    elm_box_pack_end(win->vbox, msg);
+    return msg;
 }
 
 static void _home_timeline(twitter_session* session, twitter_call* call, Eina_List* timeline, void* userdata)
 {
-    EINA_LOG_DBG("got home timeline");
+    EINA_LOG_DBG("got home timeline (timeline=%p)", timeline);
+
+    Eina_List* iter;
+    twitter_status* e;
+    EINA_LIST_FOREACH(timeline, iter, e) {
+        EINA_LOG_DBG("Status via %s: id=%s, text=\"%s\"", e->source, e->id, e->text);
+        status_bubble(MOKO_WIN(userdata), NULL, e->text, e->source);
+    }
 }
 
 MokoWin* timeline_new(int type)
@@ -76,7 +105,7 @@ MokoWin* timeline_new(int type)
     mokowin_activate(win);
 
     // TEST
-    twitter_get_home_timeline(global_session, _home_timeline, NULL);
+    twitter_get_home_timeline(global_session, _home_timeline, win);
 
     return win;
 }
