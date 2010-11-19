@@ -24,6 +24,7 @@
 #include <glib.h>
 #include <rest/rest-proxy.h>
 #include <rest/oauth-proxy.h>
+#include <rest/rest-xml-parser.h>
 #include <stdarg.h>
 
 #include "twitter.h"
@@ -34,6 +35,48 @@ int _micromoko_twitter_utils_log_dom = -1;
 
 // global
 RemoteConfigService* config = NULL;
+
+static void _status_update(twitter_session* session, twitter_call* call, const char* payload, goffset length, void* userdata)
+{
+    callback_pack* data = userdata;
+
+    DEBUG("got status update response! (%llu bytes)", length);
+
+    twitter_status* e = NULL;
+    RestXmlParser* parse = rest_xml_parser_new();
+    RestXmlNode* root = rest_xml_parser_parse_from_data(parse, payload, length);
+    if (!root || strcmp(root->name, "status")) {
+        DEBUG("%s", payload);
+        WARN("no status data!!");
+    }
+    else {
+        e = twitter_parse_status(root);
+    }
+
+    // user callback
+    TwitterStatusUpdateCallback cb = data->callback;
+    if (cb)
+        (cb)(session, call, e, data->userdata);
+    free(data);
+}
+
+/**
+ * Update the status.
+ * @param session
+ * @param status
+ * @param reply_to_id
+ * @param callback
+ * @param userdata
+ * @return the call on success
+ */
+twitter_call* twitter_update_status(twitter_session* session, const char* text, const char* reply_to_id, TwitterStatusUpdateCallback callback, void* userdata)
+{
+    callback_pack* data = malloc(sizeof(callback_pack));
+    data->callback = callback;
+    data->userdata = userdata;
+
+    return twitter_session_call_new(session, "statuses/update", "POST", _status_update, data, "status", text, "in_reply_to_status_id", reply_to_id, NULL);
+}
 
 
 static void oauth_token_copy(oauth_token* dest, oauth_token* src)
@@ -110,6 +153,21 @@ static void _call_response(RestProxyCall *call_proxy, GError* error, GObject* we
     TwitterCallCallback cb = call->callback;
     if (cb)
         (cb)(call->session, call, payload, len, call->userdata);
+
+    // destroy call
+    twitter_call_destroy(call);
+}
+
+/**
+ * Destroys a Twitter command call.
+ * @param call
+ */
+void twitter_call_destroy(twitter_call* call)
+{
+    free(call->function);
+    free(call->method);
+    g_object_unref(call->call_proxy);
+    free(call);
 }
 
 /**

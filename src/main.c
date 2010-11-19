@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
 
         // TODO last open window
         EINA_LOG_DBG("open last window");
-        timeline_new(TIMELINE_USER);
+        timeline_new(TIMELINE_HOME);
     }
 
     // no access token, authorization needed

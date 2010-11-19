@@ -12,7 +12,8 @@ libtwitter_la_SOURCES =	\
 	private.h	\
 	twitter.h	\
 	twitter.c	\
-	timeline.c
+	timeline.c	\
+	parse.c
 
 libtwitter_la_LIBADD = \
 	@GLIB_LIBS@		\

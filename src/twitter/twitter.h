@@ -89,9 +89,12 @@ typedef struct _twitter_call
 // api call callback
 typedef void (*TwitterCallCallback)(twitter_session* session, twitter_call* call, const char* payload, goffset length, void* userdata);
 
+void twitter_call_destroy(twitter_call* call);
+
 twitter_call* twitter_session_call_new(twitter_session* session,
             const char* function, const char* method,
             TwitterCallCallback callback, void* userdata, ...);
+
 
 /* -- init and auth -- */
 
@@ -108,18 +111,36 @@ twitter_session* twitter_session_new(oauth_token* consumer);
 
 void twitter_init(RemoteConfigService* config);
 
-/* -- timeline -- */
+typedef struct _twitter_user
+{
+    char* id;
+    char* name;
+    char* screen_name;
+    char* location;
+    char* description;
+    // TODO
+} twitter_user;
 
 typedef struct _twitter_status
 {
     char* id;
-    guint64 timestamp;
+    gint64 timestamp;
 
     char* text;
     char* source;
 
-    // TODO twitter_user* user;
+    twitter_user* user;
 } twitter_status;
+
+
+/* -- status update -- */
+
+typedef void (*TwitterStatusUpdateCallback)(twitter_session* session, twitter_call* call, twitter_status* status, void* userdata);
+
+twitter_call* twitter_update_status(twitter_session* session, const char* text, const char* reply_to_id, TwitterStatusUpdateCallback callback, void* userdata);
+
+
+/* -- timeline -- */
 
 typedef void (*TwitterTimelineCallback)(twitter_session* session, twitter_call* call, Eina_List* timeline, void* userdata);
 

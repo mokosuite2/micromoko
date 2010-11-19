@@ -26,6 +26,7 @@
 #endif
 
 #include <Eina.h>
+#include <rest/rest-xml-parser.h>
 
 #ifdef DEBUG
 #define TWITTER_LOG_LEVEL   EINA_LOG_LEVEL_DBG
@@ -68,5 +69,9 @@ typedef struct _callback_pack
     void* callback;
     void* userdata;
 } callback_pack;
+
+twitter_user* twitter_parse_user(RestXmlNode* node);
+twitter_status* twitter_parse_status(RestXmlNode* node);
+
 
 #endif  /* __MICROMOKO_TWITTER_PRIVATE_H */

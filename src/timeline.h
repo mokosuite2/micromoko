@@ -30,6 +30,11 @@ enum {
     TIMELINE_PUBLIC
 };
 
+enum {
+    TL_DATA_STATUS_ENTRY = 0,
+    TL_DATA_TWEET_BUTTON,
+    TL_DATA_MAX
+};
 
 MokoWin* timeline_new(int type);
 

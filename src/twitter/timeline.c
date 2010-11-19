@@ -24,35 +24,11 @@
 #include <rest/rest-xml-parser.h>
 #include <rest/oauth-proxy.h>
 #include <stdarg.h>
+#include <time.h>
 
 #include "twitter.h"
 #include "private.h"
 
-twitter_status* parse_status(RestXmlNode* status)
-{
-    RestXmlNode* n;
-
-    twitter_status* e = calloc(1, sizeof(twitter_status));
-
-    n = rest_xml_node_find(status, "id");
-    if (n) e->id = strdup(n->content);
-
-    // TODO timestamp
-
-    n = rest_xml_node_find(status, "text");
-    if (n) e->text = strdup(n->content);
-
-    n = rest_xml_node_find(status, "source");
-    if (n) e->source = strdup(n->content);
-
-    // TODO tutto il resto :)
-    return e;
-}
-
-static void _dump_child(void* key, void* value, void* data)
-{
-    DEBUG("key = \"%s\", value = %p (compare=%d)", (char*) key, value, strcmp((char*)key, "status"));
-}
 
 static void _timeline(twitter_session* session, twitter_call* call, const char* payload, goffset length, void* userdata)
 {
@@ -70,10 +46,9 @@ static void _timeline(twitter_session* session, twitter_call* call, const char* 
     Eina_List* list = NULL;
 
     // get children (status tags)
-    g_hash_table_foreach(root->children, _dump_child, NULL);
     RestXmlNode* chain = rest_xml_node_find(root, "status");
     while (chain) {
-        twitter_status* e = parse_status(chain);
+        twitter_status* e = twitter_parse_status(chain);
         if (e)
             list = eina_list_append(list, e);
 
@@ -88,6 +63,7 @@ static void _timeline(twitter_session* session, twitter_call* call, const char* 
     // free all
     rest_xml_node_unref(root);
     g_object_unref(parse);
+    free(data);
 }
 
 /**
@@ -104,5 +80,4 @@ twitter_call* twitter_get_home_timeline(twitter_session* session, TwitterTimelin
     data->userdata = userdata;
 
     return twitter_session_call_new(session, "statuses/home_timeline", "GET", _timeline, data);
-
 }
