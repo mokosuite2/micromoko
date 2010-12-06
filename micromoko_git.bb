@@ -2,7 +2,7 @@ DESCRIPTION = "Twitter client for SHR"
 HOMEPAGE = "http://gitorious.org/mokosuite2"
 AUTHOR = "Daniele Ricci"
 LICENSE = "GPLv3"
-DEPENDS = "elementary mokosuite-utils mokosuite-ui librest glib-2.0 edje-native"
+DEPENDS = "elementary libmokosuite librest glib-2.0 edje-native"
 SECTION = "misc/utils"
 
 PV = "1.0.99+gitr${SRCPV}"
