@@ -79,5 +79,5 @@ twitter_call* twitter_get_home_timeline(twitter_session* session, TwitterTimelin
     data->callback = callback;
     data->userdata = userdata;
 
-    return twitter_session_call_new(session, "statuses/home_timeline", "GET", _timeline, data);
+    return twitter_session_call_new(session, "statuses/home_timeline", "GET", _timeline, data, NULL);
 }
