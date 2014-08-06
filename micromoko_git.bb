@@ -1,5 +1,5 @@
 DESCRIPTION = "Twitter client for SHR"
-HOMEPAGE = "http://gitorious.org/mokosuite2"
+HOMEPAGE = "https://gitorious.org/mokosuite2"
 AUTHOR = "Daniele Ricci"
 LICENSE = "GPLv3"
 DEPENDS = "elementary libmokosuite librest glib-2.0 edje-native"
